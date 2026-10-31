@@ -21,7 +21,7 @@ void ConsoleHudSink::consume(const core::DiagnosticContext& context) {
     std::cout << "\033[H";
 
     std::cout << "\033[1;36m================================================================================\033[0m\n";
-    std::cout << "\033[1;37m   HEAD: Hardware Electrical & Physical Anomaly Detector (Pipe-and-Filter)   \033[0m\n";
+    std::cout << "\033[1;37m        VoltSteth: Hardware Electrical & Physical Stethoscope (Linux)          \033[0m\n";
     std::cout << "\033[1;36m================================================================================\033[0m\n";
 
     // 1. Áudio Analógico

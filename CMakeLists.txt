@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.20)
-project(head_detector VERSION 1.0.0 LANGUAGES CXX)
+project(volt_steth VERSION 1.0.0 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -28,8 +28,8 @@ set(CORE_SOURCES
     src/pipeline/DiagnosticPipeline.cpp
 )
 
-add_executable(head-detector ${CORE_SOURCES} src/main.cpp)
-target_link_libraries(head-detector PRIVATE ${ALSA_LIBRARIES})
+add_executable(volt-steth ${CORE_SOURCES} src/main.cpp)
+target_link_libraries(volt-steth PRIVATE ${ALSA_LIBRARIES})
 
 # Suíte de Testes Automatizados
 enable_testing()
