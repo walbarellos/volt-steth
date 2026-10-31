@@ -13,6 +13,10 @@
 
 ## 🖥️ Interface Gráfica (UI/UX para Usuário Comum)
 
+<p align="center">
+  <img src="assets/ui.jpg" alt="VoltSteth Interface Gráfica GTK4 Libadwaita" width="620" />
+</p>
+
 Para quem não quer lidar com o terminal, o **VoltSteth** conta com uma interface gráfica moderna e responsiva em **GTK4 + Libadwaita** (com suporte nativo ao Wayland / Hyprland):
 
 * **Medidor com Balística & Peak-Hold:** VU meter com decaimento suave que segura os picos visuais, tornando a leitura humanamente perceptível.
