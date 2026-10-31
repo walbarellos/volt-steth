@@ -3,6 +3,7 @@
 #include "sources/AlsaAudioSource.hpp"
 #include "sources/HwmonPowerSource.hpp"
 #include "sources/PcieAerSource.hpp"
+#include "sources/TopologyDiscoverySource.hpp"
 #include "filters/GroundLoopDetector.hpp"
 #include "filters/VoltageRippleDetector.hpp"
 #include "filters/EmiCorrelationDetector.hpp"
@@ -28,6 +29,7 @@ int main(int argc, char* argv[]) {
     bool forceJson = false;
     std::string recordFilePath = "";
     unsigned int recordDurationSeconds = 0;
+    bool showTopology = false;
 
     for (int i = 1; i < argc; ++i) {
         std::string arg = argv[i];
@@ -35,6 +37,8 @@ int main(int argc, char* argv[]) {
             configPath = argv[++i];
         } else if (arg == "--json") {
             forceJson = true;
+        } else if (arg == "--topology") {
+            showTopology = true;
         } else if (arg == "--record" && i + 1 < argc) {
             recordFilePath = argv[++i];
             recordDurationSeconds = 10; // padrão 10s se não especificado
@@ -57,7 +61,11 @@ int main(int argc, char* argv[]) {
         }
     }
 
-    // 1. Carregamento de Configuração Dinâmica
+    if (showTopology) {
+        auto topo = head::sources::TopologyDiscoverySource::scanSystem();
+        head::sources::TopologyDiscoverySource::printTopologyReport(topo);
+        return 0;
+    }
     head::config::AppConfig config = head::config::AppConfig::loadFromFile(configPath);
     if (forceJson) {
         config.output.enableConsoleHud = false;

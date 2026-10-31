@@ -20,6 +20,7 @@ set(CORE_SOURCES
     src/sources/AlsaAudioSource.cpp
     src/sources/HwmonPowerSource.cpp
     src/sources/PcieAerSource.cpp
+    src/sources/TopologyDiscoverySource.cpp
     src/filters/GroundLoopDetector.cpp
     src/filters/VoltageRippleDetector.cpp
     src/filters/EmiCorrelationDetector.cpp
