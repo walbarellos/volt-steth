@@ -15,6 +15,8 @@
 #include <iostream>
 #include <memory>
 #include <thread>
+#include <cmath>
+#include <iomanip>
 
 static head::pipeline::DiagnosticPipeline* g_pipeline = nullptr;
 
@@ -30,6 +32,7 @@ int main(int argc, char* argv[]) {
     std::string recordFilePath = "";
     unsigned int recordDurationSeconds = 0;
     bool showTopology = false;
+    bool quickCheck = false;
 
     for (int i = 1; i < argc; ++i) {
         std::string arg = argv[i];
@@ -39,6 +42,8 @@ int main(int argc, char* argv[]) {
             forceJson = true;
         } else if (arg == "--topology") {
             showTopology = true;
+        } else if (arg == "--quick-check") {
+            quickCheck = true;
         } else if (arg == "--record" && i + 1 < argc) {
             recordFilePath = argv[++i];
             recordDurationSeconds = 10; // padrão 10s se não especificado
@@ -64,6 +69,65 @@ int main(int argc, char* argv[]) {
     if (showTopology) {
         auto topo = head::sources::TopologyDiscoverySource::scanSystem();
         head::sources::TopologyDiscoverySource::printTopologyReport(topo);
+        return 0;
+    }
+
+    if (quickCheck) {
+        head::config::AppConfig cfg = head::config::AppConfig::loadFromFile(configPath);
+        head::sources::AlsaAudioSource audio(cfg.audio);
+        head::sources::HwmonPowerSource power(cfg.power);
+        head::sources::PcieAerSource bus(cfg.bus);
+        
+        audio.initialize();
+        power.initialize();
+        bus.initialize();
+
+        head::core::DiagnosticContext ctx;
+        audio.acquire(ctx.currentAudio);
+        power.acquire(ctx.powerReadings);
+        bus.acquire(ctx.busErrors);
+
+        head::filters::GroundLoopDetector groundFilter(cfg.audio);
+        head::filters::VoltageRippleDetector rippleFilter(cfg.power);
+        groundFilter.process(ctx);
+        rippleFilter.process(ctx);
+
+        double rmsDb = -120.0;
+        if (!ctx.currentAudio.samples.empty()) {
+            double sumSq = 0.0;
+            for (float s : ctx.currentAudio.samples) sumSq += s * s;
+            double rms = std::sqrt(sumSq / static_cast<double>(ctx.currentAudio.samples.size()));
+            rmsDb = (rms > 1e-6) ? 20.0 * std::log10(rms) : -120.0;
+        }
+
+        double humRatio = 1.0;
+        bool hasGroundLoop = false;
+        bool isCritical = false;
+        for (const auto& a : ctx.activeAnomalies) {
+            if (a.numericMetrics.count("hum_ratio")) {
+                humRatio = a.numericMetrics.at("hum_ratio");
+            }
+            if (a.type == head::core::AnomalyType::GROUND_LOOP_MAINS_HUM) {
+                hasGroundLoop = true;
+            }
+            if (a.severity == head::core::Severity::CRITICAL) {
+                isCritical = true;
+            }
+        }
+
+        std::string status = "OK";
+        if (isCritical) status = "CRITICAL";
+        else if (!ctx.activeAnomalies.empty()) status = "WARNING";
+
+        std::cout << "{\"status\":\"" << status << "\""
+                  << ",\"ground_loop\":" << (hasGroundLoop ? "true" : "false")
+                  << ",\"rms_db\":" << std::fixed << std::setprecision(1) << rmsDb
+                  << ",\"hum_ratio\":" << std::setprecision(2) << humRatio
+                  << ",\"anomalies\":" << ctx.activeAnomalies.size() << "}\n";
+
+        audio.release();
+        power.release();
+        bus.release();
         return 0;
     }
     head::config::AppConfig config = head::config::AppConfig::loadFromFile(configPath);

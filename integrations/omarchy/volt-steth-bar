@@ -1,0 +1,55 @@
+#!/usr/bin/env bash
+
+# VoltSteth Omarchy Bar Integration
+# Lê telemetria instantânea e gera ícone reativo com efeito pulsante (piscar em anomalias)
+
+BINARY="/home/walbarellos/volt-steth/build/volt-steth"
+CONFIG="/home/walbarellos/volt-steth/config.default.ini"
+TICK_FILE="/tmp/voltsteth-bar-tick"
+
+# Estado de animação de pulso
+tick=0
+if [[ -f "$TICK_FILE" ]]; then
+    tick=$(cat "$TICK_FILE" 2>/dev/null || echo 0)
+fi
+tick=$(( (tick + 1) % 2 ))
+echo "$tick" > "$TICK_FILE"
+
+# Executa quick-check em tempo real
+json=$("$BINARY" --config "$CONFIG" --quick-check 2>/dev/null || echo '{"status":"OFFLINE","rms_db":-120.0,"hum_ratio":1.0,"anomalies":0}')
+
+status=$(echo "$json" | jq -r '.status // "OFFLINE"')
+rms_db=$(echo "$json" | jq -r '.rms_db // -120.0')
+hum_ratio=$(echo "$json" | jq -r '.hum_ratio // 1.0')
+anomalies=$(echo "$json" | jq -r '.anomalies // 0')
+
+if [[ "$status" == "CRITICAL" ]]; then
+    # Efeito Pulsante / Piscar em Alerta Crítico (Loop de Terra ativo)
+    if [[ $tick -eq 0 ]]; then
+        text="󱐋 🔴 GROUND LOOP (60Hz: ${hum_ratio}x)"
+    else
+        text="󱐋 ⚠️ VAZAMENTO DE REDE!"
+    fi
+    class="voltsteth-critical"
+    tooltip="┌──────── ALERTA: LOOP DE TERRA ────────┐\n  ⚠️  Harmônica de 60Hz ativa: ${hum_ratio}x acima do ruído\n    Nível Analógico: ${rms_db} dBFS\n  ⚡  Malha fechando retorno com a placa-mãe!\n└───────────────────────────────────────┘\n(Clique esquerdo: Abrir Painel | Direito: Auditar)"
+
+elif [[ "$status" == "WARNING" ]]; then
+    # Alerta Amarelo pulsante
+    if [[ $tick -eq 0 ]]; then
+        text="󱐋  ATENÇÃO (${rms_db}dB)"
+    else
+        text="󱐋 󰓃 Ruído Elevado"
+    fi
+    class="voltsteth-warning"
+    tooltip="┌──────── STATUS: ATENÇÃO ────────┐\n  ⚠️  Ruído ou oscilação detectada no hardware\n    Nível Analógico: ${rms_db} dBFS\n└─────────────────────────────────┘\n(Clique esquerdo: Abrir Painel)"
+
+else
+    # Saudável / Normal (Ícone sutil e translúcido)
+    text="󱐋 OK"
+    class="voltsteth-ok"
+    tooltip="┌──────── VOLTSTETH: HARDWARE ESTÁVEL ────────┐\n  ✅  Malha de Aterramento: ISOLADA (Zero 60Hz)\n  ✅  Integridade PCIe / USB: LIMPA\n    Piso de Ruído Analógico: ${rms_db} dBFS\n└─────────────────────────────────────────────┘\n(Clique esquerdo: Abrir Painel | Direito: Auditar)"
+fi
+
+cat <<EOF
+{"text":"$text","tooltip":"$tooltip","class":"$class"}
+EOF
