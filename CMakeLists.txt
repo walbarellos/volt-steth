@@ -25,6 +25,7 @@ set(CORE_SOURCES
     src/filters/EmiCorrelationDetector.cpp
     src/sinks/ConsoleHudSink.cpp
     src/sinks/JsonStreamSink.cpp
+    src/sinks/SessionRecorderSink.cpp
     src/pipeline/DiagnosticPipeline.cpp
 )
 

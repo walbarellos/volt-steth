@@ -3,6 +3,8 @@ build/
 *.o
 *.a
 *.so
+*.jsonl
+diagnostic_session.jsonl
 compile_commands.json
 .vscode/
 .idea/

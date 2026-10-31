@@ -76,7 +76,17 @@ cd build && ctest --output-on-failure
 ./build/test-pipeline
 ```
 
-### Executar a HUD no Terminal:
+### Executar Auditoria Automática (Gera relatório e telemetria estruturada para IA):
+```bash
+./build/volt-steth --config config.default.ini --diagnose
+```
+
+### Gravar Sessão de Telemetria Contínua (ex: 30 segundos em JSONL):
+```bash
+./build/volt-steth --config config.default.ini --record sessao.jsonl --duration 30
+```
+
+### Executar a HUD no Terminal (Tempo Real):
 ```bash
 ./build/volt-steth --config config.default.ini
 ```
